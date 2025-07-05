@@ -15,8 +15,10 @@ from PyQt5.QtWidgets import (
     QMenu, QToolButton, QMessageBox, QTabBar, QStyleOptionTab
 )
 from PyQt5.QtWebEngineWidgets import (
-    QWebEngineView, QWebEnginePage, QWebEngineFullScreenRequest, QWebEngineSettings
+    QWebEngineView, QWebEnginePage, QWebEngineFullScreenRequest, QWebEngineSettings,
+    QWebEngineDownloadItem
 )
+from PyQt5.QtWidgets import QFileDialog
 from style import apply_fusion_style, get_palette
 
 # --- DPI/Scaling Awareness ---
@@ -355,6 +357,19 @@ def handle_fullscreen_request(request):
         fullscreen_old_geometry = None
         fullscreen_old_parent = None
 
+# --- Download Handling ---
+def handle_download(download: QWebEngineDownloadItem):
+    suggested = download.suggestedFileName()
+    path, _ = QFileDialog.getSaveFileName(window, "Save File", suggested)
+    if path:
+        download.setPath(path)
+        download.accept()
+        def on_finished():
+            QMessageBox.information(window, "Download Complete", f"File downloaded to:\n{path}")
+        download.finished.connect(on_finished)
+    else:
+        download.cancel()
+
 # --- Tab Management ---
 def add_new_tab(url=None):
     if activation_key != "ILLUM-INATI6-666" and tabs.count() >= 2:
@@ -382,6 +397,8 @@ def add_new_tab(url=None):
     browser.urlChanged.connect(lambda q, browser=browser: update_urlbar(q, browser))
     browser.loadFinished.connect(lambda _, browser=browser: update_tab_title(browser))
     browser.iconChanged.connect(lambda icon, browser=browser: update_tab_icon(browser, icon))
+    # --- Download handler ---
+    browser.page().profile().downloadRequested.connect(handle_download)
     return browser
 
 def update_urlbar(q, browser):
