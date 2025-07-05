@@ -10,10 +10,11 @@
 - Homepage and new tab customization
 - Browsing history
 - User-adjustable default zoom (text size) for all web pages
-- Activation key system (demo)
+- Activation key system
 - Settings dialog for all options
 - Fullscreen support (F11)
-- Placeholder for AI assistant ("Greg")
+- AI assistant ("Greg") ALPHA
+- File Download function
 
 ## Requirements
 
