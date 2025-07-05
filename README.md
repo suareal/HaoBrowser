@@ -37,6 +37,24 @@ pip install PyQt5 PyQtWebEngine
 python hao.py
 ```
 
+## Compilation
+
+To compile Hao Browser into a standalone executable using PyInstaller:
+
+1. Install PyInstaller:
+
+    ```sh
+    pip install pyinstaller
+    ```
+
+2. Run PyInstaller with the provided `.spec` file:
+
+    ```sh
+    pyinstaller .spec
+    ```
+
+3. The compiled executable will be located in the `dist/hao` directory.
+
 ## Customization
 
 - **Settings**: Click the "…" menu and choose "Settings" to change search engine, homepage, theme, region, activation key, and default zoom.
@@ -54,4 +72,4 @@ python hao.py
 
 ---
 
-Enjoy browsing with Hao
+Enjoy
