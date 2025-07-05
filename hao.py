@@ -37,6 +37,12 @@ system_scaling = system_dpi / 96.0 if system_dpi else 1.0
 
 apply_fusion_style(app)
 
+def get_resource_path(filename):
+    """Get the absolute path to a resource file."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, filename)
+    return os.path.join(os.path.dirname(__file__), filename)
+
 # --- Theme Detection ---
 def apply_theme():
     global is_dark
@@ -141,7 +147,7 @@ class HaoMainWindow(QMainWindow):
 
 window = HaoMainWindow()
 window.setWindowTitle("Hao Browser 1.0 Beta 1 | The best in the universe")
-window.setWindowIcon(QIcon("resources/app.png"))
+window.setWindowIcon(QIcon(get_resource_path("resources/app.png")))
 
 def update_window_title():
     if activation_key != "ILLUM-INATI6-666":
@@ -172,7 +178,7 @@ toolbar.addWidget(bar_container)
 back_action = QAction(get_icon("go-previous", QStyle.SP_ArrowBack), "", window)
 forward_action = QAction(get_icon("go-next", QStyle.SP_ArrowForward), "", window)
 refresh_action = QAction(get_icon("view-refresh", QStyle.SP_BrowserReload), "", window)
-home_action = QAction(QIcon("resources/home.png"), "Home", window)
+home_action = QAction(QIcon(get_resource_path("resources/home.png")), "Home", window)
 new_tab_action = QAction(get_icon("tab-new", QStyle.SP_FileDialogNewFolder), "New Tab", window)
 toolbar.addAction(back_action)
 toolbar.addAction(forward_action)
