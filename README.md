@@ -14,7 +14,7 @@
 - Settings dialog for all options
 - Fullscreen support (F11)
 - AI assistant ("Greg") ALPHA
-- Download function
+- File Download function
 
 ## Requirements
 
