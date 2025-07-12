@@ -12,7 +12,8 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLineEdit, QToolBar, QTabWidget, QWidget,
     QVBoxLayout, QAction, QHBoxLayout, QSizePolicy, QStyleFactory, QStyle,
-    QMenu, QToolButton, QMessageBox, QTabBar, QStyleOptionTab
+    QMenu, QToolButton, QMessageBox, QTabBar, QStyleOptionTab,
+    QDialog, QLabel, QListWidget, QPushButton, QProgressBar
 )
 from PyQt5.QtWebEngineWidgets import (
     QWebEngineView, QWebEnginePage, QWebEngineFullScreenRequest, QWebEngineSettings,
@@ -68,6 +69,8 @@ DEFAULTS = {
 activation_key = ""
 history = []
 browser_zoom = DEFAULTS["browser_zoom"]
+
+downloads = []  # List of dicts: {item, name, path, progress, status}
 
 # --- Settings Persistence ---
 def load_settings():
@@ -206,6 +209,9 @@ menu.addMenu(zoom_menu)
 menu.addAction(settings_action)
 menu.addAction(history_action)
 menu.addAction(about_action)
+downloads_action = QAction("Downloads", window)
+downloads_action.setToolTip("View Downloads")
+menu.addAction(downloads_action)
 menu_button.setMenu(menu)
 toolbar.addWidget(menu_button)
 
@@ -213,6 +219,66 @@ copilot_action = QAction(QIcon(), "Copilot", window)
 copilot_action.setToolTip("Ask Greg (AI Assistant)")
 copilot_action.setIconText("AI")
 toolbar.insertAction(menu_button.defaultAction() if hasattr(menu_button, 'defaultAction') else None, copilot_action)
+
+# --- Download List Dialog ---
+def show_downloads():
+    dialog = QDialog(window)
+    dialog.setWindowTitle("Downloads")
+    dialog.resize(520, 340)
+    layout = QVBoxLayout()
+    list_widget = QListWidget()
+    progress_bars = []s
+    open_btns = []
+    open_folder_btns = []
+    cancel_btns = []
+    for i, d in enumerate(downloads):
+        item_text = f"{d['name']}\n{d['status']}"
+        list_widget.addItem(item_text)
+    layout.addWidget(QLabel("Download List:"))
+    layout.addWidget(list_widget)
+    # Add progress bars, open buttons, and cancel buttons below the list
+    for i, d in enumerate(downloads):
+        h = QHBoxLayout()
+        bar = QProgressBar()
+        bar.setMinimum(0)
+        bar.setMaximum(100)
+        bar.setValue(d['progress'])
+        progress_bars.append(bar)
+        h.addWidget(bar)
+        open_btn = QPushButton("Open")
+        open_btn.setEnabled(d['status'] == "Completed")
+        def open_file(path=d['path']):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+        open_btn.clicked.connect(open_file)
+        open_btns.append(open_btn)
+        h.addWidget(open_btn)
+        open_folder_btn = QPushButton("Show in Folder")
+        open_folder_btn.setEnabled(d['status'] == "Completed")
+        def open_folder(path=d['path']):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(path)))
+        open_folder_btn.clicked.connect(open_folder)
+        open_folder_btns.append(open_folder_btn)
+        h.addWidget(open_folder_btn)
+        # --- Cancel Button ---
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setEnabled(d['status'] == "Downloading")
+        def cancel_download(idx=i, d=d):
+            if d['status'] == "Downloading":
+                d['item'].cancel()
+                d['status'] = "Cancelled"
+                d['progress'] = 0
+                cancel_btn.setEnabled(False)
+                bar.setValue(0)
+                list_widget.item(idx).setText(f"{d['name']}\n{d['status']}")
+        cancel_btn.clicked.connect(cancel_download)
+        cancel_btns.append(cancel_btn)
+        h.addWidget(cancel_btn)
+        layout.addLayout(h)
+    close_btn = QPushButton("Close")
+    close_btn.clicked.connect(dialog.accept)
+    layout.addWidget(close_btn)
+    dialog.setLayout(layout)
+    dialog.exec_()
 
 # --- Tab Widget and MarqueeTabBar ---
 class MarqueeTabBar(QTabBar):
@@ -362,10 +428,17 @@ def handle_download(download: QWebEngineDownloadItem):
     suggested = download.suggestedFileName()
     path, _ = QFileDialog.getSaveFileName(window, "Save File", suggested)
     if path:
+        d = {'item': download, 'name': suggested, 'path': path, 'progress': 0, 'status': 'Downloading'}
+        downloads.append(d)
         download.setPath(path)
         download.accept()
+        def on_progress(received, total):
+            d['progress'] = int(received * 100 / total) if total > 0 else 0
         def on_finished():
+            d['progress'] = 100
+            d['status'] = 'Completed' if download.state() == QWebEngineDownloadItem.DownloadCompleted else 'Failed'
             QMessageBox.information(window, "Download Complete", f"File downloaded to:\n{path}")
+        download.downloadProgress.connect(on_progress)
         download.finished.connect(on_finished)
     else:
         download.cancel()
@@ -803,6 +876,7 @@ settings_action.triggered.connect(show_settings)
 history_action.triggered.connect(show_history)
 about_action.triggered.connect(show_about)
 copilot_action.triggered.connect(show_copilot_dialog)
+downloads_action.triggered.connect(show_downloads)
 
 def handle_url_or_search():
     text = url_bar.text().strip()
