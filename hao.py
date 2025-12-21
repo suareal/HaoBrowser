@@ -233,7 +233,7 @@ def show_downloads():
     dialog.resize(520, 340)
     layout = QVBoxLayout()
     list_widget = QListWidget()
-    progress_bars = []s
+    progress_bars = []
     open_btns = []
     open_folder_btns = []
     cancel_btns = []
